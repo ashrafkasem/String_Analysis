@@ -5,3 +5,4 @@ outdir
 venv
 *.pptx
 .DS_Store
+core/__pycache__/utils.cpython-311.pyc
