@@ -1,0 +1,7 @@
+.ipynb_checkpoints
+.vscode
+backup
+outdir
+venv
+*.pptx
+.DS_Store
