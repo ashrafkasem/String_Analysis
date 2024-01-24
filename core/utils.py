@@ -109,3 +109,14 @@ def clean_dict(d):
 def is_subset(list1, list2):
     # Return True if list1 is a subset of list2, False otherwise
     return all(x in list2 for x in list1)
+
+def line_rotation(slope):
+    angle_radians = np.arctan(slope)
+    angle_degrees = np.degrees(angle_radians)
+    rotation_angle = 90 - angle_degrees
+    return rotation_angle
+
+def line_rotation_angle_radian(slope):
+    angle_radian = np.arctan(slope)
+    rotation_angle_radian = np.pi / 2 - angle_radian
+    return rotation_angle_radian

@@ -13,6 +13,7 @@ gap = 35
 global_distances = []
 global_numbers = []
 global_angles = []
+global_angles_avg = []
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Welcome to string analysis framework.')
@@ -305,16 +306,26 @@ if __name__=='__main__':
         os.makedirs(os.path.join(outdir,'5-numbers_all_particles'), exist_ok=True)
         plt.savefig(f"{os.path.join(outdir,'5-numbers_all_particles')}/{key}.png")
         plt.clf()
-
         angles = []
         if r2_plots and key in df_r2_dict:
-            for particle, indices in line_particles_dict[key].items():
+            for line, indices in line_particles_dict[key].items():
+                line_angles = []
                 for i in range(len(indices) - 1):
-                    index1, index2 = indices[i], indices[i + 1]
-                    angle = node_deltaTheta(index1, index2, df_r2_dict[key], show=False)
-                    angles.append(angle)
-                    global_angles.append(angle)
-
+                    PSII_index = indices[i]
+                    slope = new_lines_dict[key][line][0]
+                    line_rotation_to_xaxis = line_rotation_angle_radian(slope)
+                    delta = df_r2_dict[key]["Angle (rad.)"][PSII_index] - line_rotation_to_xaxis
+                    delta_norm = np.arctan2(np.sin(delta), np.cos(delta))
+                    # index1, index2 = indices[i], indices[i + 1]
+                    # angle = node_deltaTheta(index1, index2, df_r2_dict[key], show=False)
+                    angles.append(delta_norm)
+                    global_angles.append(delta_norm)
+                    line_angles.append(delta_norm)
+                if line_angles: 
+                    global_angles_avg.append(np.mean(line_angles))
+                else: 
+                    global_angles_avg.append(-1000)
+            
             # Step 3: Create a histogram
             hist_values, bin_edges, _ = plt.hist(angles, bins=20, density=True, histtype='stepfilled', edgecolor='k')
 
@@ -335,8 +346,10 @@ if __name__=='__main__':
             os.makedirs(os.path.join(outdir,'6-angles_all_particles'), exist_ok=True)
             plt.savefig(f"{os.path.join(outdir,'6-angles_all_particles')}/{key}.png")
             plt.clf()
-    
-    ## plot the global distance, numbers, angles
+        
+    """
+    plot the global distance, numbers, angles
+    """
 
     hist_values, bin_edges, _ = plt.hist(global_distances, bins=40, density=True, histtype='stepfilled', edgecolor='k')
 
@@ -433,10 +446,10 @@ if __name__=='__main__':
         plt.clf()
 
         # Create a 2D histogram
-        plt.hist2d(global_angles, global_numbers, bins=[20, np.arange(min(global_numbers), max(global_numbers) + 2)], cmap='viridis')
+        plt.hist2d(global_angles_avg, global_numbers, bins=[20, np.arange(min(global_numbers), max(global_numbers) + 2)], cmap='viridis')
 
         # Add labels and a colorbar
-        plt.xlabel(r'$\Delta \theta$ PSII axis [rad.]')
+        plt.xlabel(r'avarage $\Delta \theta$ PSII axis [rad.]')
         plt.ylabel('Nmuber of connected PSII')
         plt.title('2D Histogram of Angles vs Distances')
         plt.colorbar(label='Frequency')
