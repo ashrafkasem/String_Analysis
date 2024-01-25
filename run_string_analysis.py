@@ -14,7 +14,7 @@ global_distances = []
 global_numbers = []
 global_angles = []
 global_angles_avg = []
-
+global_name = ""
 def parse_args():
     parser = argparse.ArgumentParser(description='Welcome to string analysis framework.')
     parser.add_argument("-data",'--data_dir', help='input directory', metavar='data_dir')
@@ -35,6 +35,18 @@ if __name__=='__main__':
 
     if args["real"]: 
         r2_plots = False
+        if 'dark' in args["data_dir"].lower():
+            global_name = "dark"
+        elif 'light' in args["data_dir"].lower(): 
+            global_name = "dark"
+        else: 
+            raise ValueError(f"Data directory does not contain 'dark' or 'light'.")
+    else: 
+        # Find the substring "mem_" and get the part after it
+        start_index = args["data_dir"].find("mem_") + len("mem_")
+        end_index = args["data_dir"].find("_coordinates")
+        # Extract the desired substring
+        global_name = args["data_dir"][start_index:end_index]
 
     list_of_files = sorted(glob.glob(f"{args['data_dir']}/*_PSIIs*.csv"))
     if r2_plots: 
@@ -310,11 +322,10 @@ if __name__=='__main__':
         if r2_plots and key in df_r2_dict:
             for line, indices in line_particles_dict[key].items():
                 line_angles = []
-                for i in range(len(indices) - 1):
-                    PSII_index = indices[i]
-                    slope = new_lines_dict[key][line][0]
-                    line_rotation_to_xaxis = line_rotation_angle_radian(slope)
-                    delta = df_r2_dict[key]["Angle (rad.)"][PSII_index] - line_rotation_to_xaxis
+                slope = new_lines_dict[key][line][0]
+                line_rotation_to_xaxis = line_rotation_angle_radian(slope)
+                for i in indices:
+                    delta = df_r2_dict[key]["Angle (rad.)"][i] - line_rotation_to_xaxis
                     delta_norm = np.arctan2(np.sin(delta), np.cos(delta))
                     # index1, index2 = indices[i], indices[i + 1]
                     # angle = node_deltaTheta(index1, index2, df_r2_dict[key], show=False)
@@ -364,7 +375,7 @@ if __name__=='__main__':
     # Calculate the integral within the specified range
     integral = np.sum(hist_values[lower_index:upper_index] * np.diff(bin_edges)[lower_index:upper_index])
 
-    plt.title('Distance Distribution between Neighboring Particles')
+    plt.title('Distance Distribution for Neighboring Particles')
     plt.xlabel('Distance')
     plt.ylabel('Frequency')
     plt.axvline(x=lower_bound, color='red', linestyle='--', label='Vertical Line at x = 20')
@@ -385,7 +396,7 @@ if __name__=='__main__':
     # print(np.sum(hist_values[0:40] * np.diff(bin_edges)[0:40]))
     
     os.makedirs(os.path.join(outdir,'7-global_vars_all_particles'), exist_ok=True)
-    plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/distance.png")
+    plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/distance_{global_name}.png")
     plt.clf()
 
     # Step 3: Create a histogram
@@ -421,7 +432,7 @@ if __name__=='__main__':
     plt.annotate('', xy=(lower_bound, max(hist_values)), xytext=(lower_bound, 0),
                 arrowprops=dict(arrowstyle='->', color='blue'))
     # print(np.sum(hist_values[0:40] * np.diff(bin_edges)[0:40]))
-    plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/numbers.png")
+    plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/numbers_{global_name}.png")
     plt.clf()
 
     if r2_plots:
@@ -432,8 +443,8 @@ if __name__=='__main__':
         lower_bound = 0
         upper_bound = np.pi/2.0
 
-        plt.title('Angluar Distribution between Neighboring Particles')
-        plt.xlabel(r'$\Delta \theta$ PSII axis [rad.]')
+        plt.title('Angluar Distribution between PSII and strings w.r.t x-axis')
+        plt.xlabel(r'$\Delta \theta$ (PSII - line ) [rad.]')
         plt.ylabel('Frequency')
         plt.axvline(x=lower_bound, color='red', linestyle='--', label='Vertical Line at x = 20')
         plt.axvline(x=upper_bound, color='red', linestyle='--', label='Vertical Line at x = 20')
@@ -442,29 +453,39 @@ if __name__=='__main__':
         plt.axvline(x=-upper_bound * 2, color='red', linestyle='--', label='Vertical Line at x = 20')
 
         # print(np.sum(hist_values[0:40] * np.diff(bin_edges)[0:40]))
-        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles.png")
+        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_{global_name}.png")
         plt.clf()
 
         # Create a 2D histogram
         plt.hist2d(global_angles_avg, global_numbers, bins=[20, np.arange(min(global_numbers), max(global_numbers) + 2)], cmap='viridis')
 
         # Add labels and a colorbar
-        plt.xlabel(r'avarage $\Delta \theta$ PSII axis [rad.]')
+        plt.xlabel(r'avarage $\Delta \theta$ (PSII - line ) [rad.]')
         plt.ylabel('Nmuber of connected PSII')
         plt.title('2D Histogram of Angles vs Distances')
         plt.colorbar(label='Frequency')
-        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_vs_numbers.png")
+        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/avg_angles_vs_numbers_{global_name}.png")
         plt.clf()
 
         # Create a 2D histogram
-        plt.hist2d(global_angles, global_distances, bins=[20, 40], cmap='viridis')
+        plt.hist2d(global_angles, [value for value in global_numbers for _ in range(value)], bins=[20, np.arange(min(global_numbers), max(global_numbers) + 2)], cmap='viridis')
         # Add labels and a colorbar
-        plt.xlabel(r'$\Delta \theta$ PSII axis [rad.]')
-        plt.ylabel('Distance')
+        plt.xlabel(r'$\Delta \theta$ (PSII - line ) [rad.]')
+        plt.ylabel('Nmuber of connected PSII')
         plt.title('2D Histogram of Angles vs Distances')
         plt.colorbar(label='Frequency')
-        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_vs_distance.png")
+        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_vs_numbers_{global_name}.png")
         plt.clf()
+
+        # # Create a 2D histogram
+        # plt.hist2d(global_angles, global_distances, bins=[20, 40], cmap='viridis')
+        # # Add labels and a colorbar
+        # plt.xlabel(r'$\Delta \theta$ (PSII - line ) [rad.]')
+        # plt.ylabel('Distance')
+        # plt.title('2D Histogram of Angles vs Distances')
+        # plt.colorbar(label='Frequency')
+        # plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_vs_distance_{global_name}.png")
+        # plt.clf()
 
     if args['real']: 
         total_number_of_PSII = []
@@ -484,5 +505,5 @@ if __name__=='__main__':
         print(total_numner_of_PSII_in_strings)
 
         # Show the plot
-        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/total_PSII_strings.png")
+        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/total_PSII_strings_{global_name}.png")
         plt.clf()
