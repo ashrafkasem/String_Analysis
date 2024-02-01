@@ -9,7 +9,7 @@ import networkx as nx
 radius = 7.5
 distance = 25
 gap = 35
-
+edge_limit = 15
 global_distances = []
 global_distances_for_2d = []
 global_numbers = []
@@ -504,15 +504,47 @@ if __name__=='__main__':
     df = pd.DataFrame({'total_number_of_PSII': total_number_of_PSII, 'total_numner_of_PSII_in_strings': total_numner_of_PSII_in_strings})
     df.to_csv(f"{os.path.join(outdir,'7-global_vars_all_particles')}/PSII_vs_string_{global_name}.csv", index=False)
 
-        # plt.scatter(total_number_of_PSII, total_numner_of_PSII_in_strings, marker='o', color='blue', label='')
+    if not args['real']:
+        total_number_of_selected_strings = 0 
+        total_number_of_selected_strings_at_edge = 0
+        total_number_of_strings = 0
+        total_number_of_strings_at_edge = 0
+        plane_size = 1000
+        
 
-        # # Add labels and a title
-        # plt.xlabel('Total number PSII')
-        # plt.ylabel('Number PSII in strings')
-        # plt.title('Sine Wave Plot')
-        # print(total_number_of_PSII)
-        # print(total_numner_of_PSII_in_strings)
+        for key, membrane in line_particles_dict.items():
+            for string, string_PSII in membrane.items():
+                edge = False
+                total_number_of_strings += 1 
+                if global_name.startswith("60"):
+                    plane_size = 207
+                elif global_name.startswith("80"):
+                    plane_size = 239
+                edge = edge_effect(string_PSII, df_dict[key], plane_size=plane_size, limit=edge_limit)
+                if edge: 
+                    total_number_of_strings_at_edge +=1
+        
+        for key, membrane in selected_line_particles_dict.items():
+            for string, string_PSII in membrane.items():
+                edge = False
+                total_number_of_selected_strings += 1 
+                if global_name.startswith("60"):
+                    plane_size = 207
+                elif global_name.startswith("80"):
+                    plane_size = 239
+                edge = edge_effect(string_PSII, df_dict[key], plane_size=plane_size, limit=edge_limit)
+                if edge: 
+                    total_number_of_selected_strings_at_edge +=1
+        
+        # Open the file in write mode
+        file_path = f"{os.path.join(outdir,'7-global_vars_all_particles')}/edge_effect_{global_name}.txt"
+        with open(file_path, 'w') as file:
+            # Write the variables to the file
+            file.write(f"plane_size: {plane_size}\n")
+            file.write(f"total_number_of_selected_strings: {total_number_of_selected_strings}\n")
+            file.write(f"total_number_of_selected_strings_at_edge: {total_number_of_selected_strings_at_edge}\n")
+            file.write(f"total_number_of_strings: {total_number_of_strings}\n")
+            file.write(f"total_number_of_strings_at_edge: {total_number_of_strings_at_edge}\n")
+        print(f"Variables written to {file_path}")
 
-        # # Show the plot
-        # plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/total_PSII_strings_{global_name}.png")
-        # plt.clf()
+    

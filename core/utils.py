@@ -120,3 +120,37 @@ def line_rotation_angle_radian(slope):
     angle_radian = np.arctan(slope)
     rotation_angle_radian = np.pi / 2 - angle_radian
     return rotation_angle_radian
+
+def distance_from_edge(pos, half_plane_size):
+    if pos <= 0:
+        return pos + half_plane_size
+    else:
+        return half_plane_size - pos 
+
+def check_within_15nm_along_x(x1, x2, plane_size, limit):
+    half_plane_size = plane_size / 2
+    within_limit_point1 = distance_from_edge(x1, half_plane_size) <= limit
+    within_limit_point2 = distance_from_edge(x2, half_plane_size) <= limit
+
+    return within_limit_point1 and within_limit_point2
+
+def check_within_15nm_along_y(y1, y2, plane_size, limit):
+    half_plane_size = plane_size / 2
+    within_limit_point1 = distance_from_edge(y1, half_plane_size) <= limit
+    within_limit_point2 = distance_from_edge(y2, half_plane_size) <= limit
+
+    return within_limit_point1 and within_limit_point2
+
+def edge_effect(string, df, plane_size, limit):
+    first_psii = string[0]
+    last_psii = string[-1]
+    x1, y1 = (df.loc[first_psii]['X'], df.loc[first_psii]['Y'])
+    x2, y2 = (df.loc[last_psii]['X'], df.loc[last_psii]['Y'])
+    within_limit_x = check_within_15nm_along_x(x1, x2, plane_size, limit)
+    within_limit_y = check_within_15nm_along_y(y1, y2, plane_size, limit)
+    if within_limit_x or within_limit_y:
+        return True 
+    else:
+        return False
+    
+        
