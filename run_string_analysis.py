@@ -11,6 +11,7 @@ distance = 25
 gap = 35
 
 global_distances = []
+global_distances_for_2d = []
 global_numbers = []
 global_angles = []
 global_angles_avg = []
@@ -38,7 +39,7 @@ if __name__=='__main__':
         if 'dark' in args["data_dir"].lower():
             global_name = "dark"
         elif 'light' in args["data_dir"].lower(): 
-            global_name = "dark"
+            global_name = "light"
         else: 
             raise ValueError(f"Data directory does not contain 'dark' or 'light'.")
     else: 
@@ -231,13 +232,17 @@ if __name__=='__main__':
         distances = []
 
         for particle, indices in line_particles_dict[key].items():
-            for i in range(len(indices) - 1):
-                index1, index2 = indices[i], indices[i + 1]
-                distance = node_distance(index1, index2, df, show=False)
-                distances.append(distance)
-                global_distances.append(distance)
-                if distance < 15 : 
-                    print(particle)
+            for n, i in enumerate(indices):
+                if n < len(indices)-1:
+                    index1, index2 = indices[n], indices[n + 1]
+                    distance = node_distance(index1, index2, df, show=False)
+                    distances.append(distance)
+                    global_distances.append(distance)
+                    global_distances_for_2d.append(distance)
+                    if distance < 15 : 
+                        print(particle)
+                else: 
+                    global_distances_for_2d.append(0)
 
         # Step 3: Create a histogram
         hist_values, bin_edges, _ = plt.hist(distances, bins=40, density=True, histtype='stepfilled', edgecolor='k')
@@ -462,7 +467,7 @@ if __name__=='__main__':
         # Add labels and a colorbar
         plt.xlabel(r'avarage $\Delta \theta$ (PSII - line ) [rad.]')
         plt.ylabel('Nmuber of connected PSII')
-        plt.title('2D Histogram of Angles vs Distances')
+        plt.title('2D Histogram of avg Angles vs Nmuber of PSIIs')
         plt.colorbar(label='Frequency')
         plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/avg_angles_vs_numbers_{global_name}.png")
         plt.clf()
@@ -472,38 +477,42 @@ if __name__=='__main__':
         # Add labels and a colorbar
         plt.xlabel(r'$\Delta \theta$ (PSII - line ) [rad.]')
         plt.ylabel('Nmuber of connected PSII')
-        plt.title('2D Histogram of Angles vs Distances')
+        plt.title('2D Histogram of Angles vs Nmuber of PSIIs')
         plt.colorbar(label='Frequency')
         plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_vs_numbers_{global_name}.png")
         plt.clf()
 
-        # # Create a 2D histogram
-        # plt.hist2d(global_angles, global_distances, bins=[20, 40], cmap='viridis')
-        # # Add labels and a colorbar
-        # plt.xlabel(r'$\Delta \theta$ (PSII - line ) [rad.]')
-        # plt.ylabel('Distance')
-        # plt.title('2D Histogram of Angles vs Distances')
-        # plt.colorbar(label='Frequency')
-        # plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_vs_distance_{global_name}.png")
-        # plt.clf()
+        # Create a 2D histogram
+        plt.hist2d(global_angles, global_distances_for_2d, bins=[20, 40], cmap='viridis')
 
-    if args['real']: 
-        total_number_of_PSII = []
-        total_numner_of_PSII_in_strings = []
-        for key, df in df_dict.items():
-            total_number_of_PSII.append(df.shape[0])
-            combined_list = [item for sublist in selected_line_particles_dict[key].values() if len(sublist) > 3 for item in sublist]
-            total_numner_of_PSII_in_strings.append(len(list(set(combined_list))))
-        
-        plt.scatter(total_number_of_PSII, total_numner_of_PSII_in_strings, marker='o', color='blue', label='')
-
-        # Add labels and a title
-        plt.xlabel('Total number PSII')
-        plt.ylabel('Number PSII in strings')
-        plt.title('Sine Wave Plot')
-        print(total_number_of_PSII)
-        print(total_numner_of_PSII_in_strings)
-
-        # Show the plot
-        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/total_PSII_strings_{global_name}.png")
+        # Add labels and a colorbar
+        plt.xlabel(r'$\Delta \theta$ (PSII - line ) [rad.]')
+        plt.ylabel('Distance between connected PSII [nm]')
+        plt.title('2D Histogram of Angles vs Distances')
+        plt.colorbar(label='Frequency')
+        plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/angles_vs_distance_{global_name}.png")
         plt.clf()
+
+    # if args['real']: 
+    total_number_of_PSII = []
+    total_numner_of_PSII_in_strings = []
+    for key, df in df_dict.items():
+        total_number_of_PSII.append(df.shape[0])
+        combined_list = [item for sublist in selected_line_particles_dict[key].values() if len(sublist) > 3 for item in sublist]
+        total_numner_of_PSII_in_strings.append(len(list(set(combined_list))))
+
+    df = pd.DataFrame({'total_number_of_PSII': total_number_of_PSII, 'total_numner_of_PSII_in_strings': total_numner_of_PSII_in_strings})
+    df.to_csv(f"{os.path.join(outdir,'7-global_vars_all_particles')}/PSII_vs_string_{global_name}.csv", index=False)
+
+        # plt.scatter(total_number_of_PSII, total_numner_of_PSII_in_strings, marker='o', color='blue', label='')
+
+        # # Add labels and a title
+        # plt.xlabel('Total number PSII')
+        # plt.ylabel('Number PSII in strings')
+        # plt.title('Sine Wave Plot')
+        # print(total_number_of_PSII)
+        # print(total_numner_of_PSII_in_strings)
+
+        # # Show the plot
+        # plt.savefig(f"{os.path.join(outdir,'7-global_vars_all_particles')}/total_PSII_strings_{global_name}.png")
+        # plt.clf()
